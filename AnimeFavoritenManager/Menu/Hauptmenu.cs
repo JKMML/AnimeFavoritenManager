@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AnimeFavoritenManager.Daten;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,7 @@ namespace AnimeFavoritenManager.Menu
 {
     internal class Hauptmenu
     {
+        private readonly BenutzerVerwalter benutzerVerwalter = new BenutzerVerwalter();
         private bool anwendungLaeuft = true;
 
         public void AnwendungStarten()
@@ -23,9 +25,15 @@ namespace AnimeFavoritenManager.Menu
         {
             Console.Clear();
             Console.WriteLine("=== Anime Favoriten Manager ===");
-            Console.WriteLine("1. Benutzerverwaltung");
-            Console.WriteLine("2. Anime Verwaltung");
-            Console.WriteLine("3. Beenden");
+            Console.WriteLine("1. Benutzer Registrieren");
+            Console.WriteLine("2. Benutzer Login");
+            if (benutzerVerwalter.AngemeldeterBenutzer!= null)
+            {
+                Console.WriteLine("3) Favoriten-Menü (kommt an Tag 3)");
+                Console.WriteLine($"(Angemeldet als: {benutzerVerwalter.AngemeldeterBenutzer.BenutzerName})");
+                Console.WriteLine("4 Anime Season Liste anzeigen");
+            }
+            Console.WriteLine("0. Beenden");
             Console.Write("Bitte wählen Sie eine Option: ");
         }
         private void HauptmenuAuswahlBehandeln(string? benutzerAuswahl)
@@ -39,8 +47,38 @@ namespace AnimeFavoritenManager.Menu
                 case "2":
                     BenutzerAnmeldungStarten();
                     break;
-
                 case "3":
+                    if (benutzerVerwalter.AngemeldeterBenutzer != null)
+                    {
+                        // Favoriten-Menü aufrufen (noch nicht implementiert)
+                        Console.WriteLine("Favoriten-Menü wird bald verfügbar sein!");
+                        Console.WriteLine("Weiter mit einer beliebigen Taste");
+                        Console.ReadKey();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Bitte melden Sie sich zuerst an, um auf das Favoriten-Menü zuzugreifen.");
+                        Console.WriteLine("Weiter mit einer beliebigen Taste");
+                        Console.ReadKey();
+                    }
+                    break;
+                case "4":
+                    if (benutzerVerwalter.AngemeldeterBenutzer != null)
+                    {
+                        // Seasonal Anime aufrufen (noch nicht implementiert)
+                        Console.WriteLine("AnimeListe wird bald verfügbar sein!");
+                        Console.WriteLine("Weiter mit einer beliebigen Taste");
+                        Console.ReadKey();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Bitte melden Sie sich zuerst an, um auf das Favoriten-Menü zuzugreifen.");
+                        Console.WriteLine("Weiter mit einer beliebigen Taste");
+                        Console.ReadKey();
+                    }
+                    break;
+
+                case "0":
                     AnwendungBeenden();
                     break;
 
@@ -52,14 +90,12 @@ namespace AnimeFavoritenManager.Menu
 
         private void BenutzerRegistrierungStarten()
         {
-            Console.WriteLine("Registrierung Platzhalter");
-            Console.ReadKey();
+            benutzerVerwalter.BenutzerRegistrieren();
         }
 
         private void BenutzerAnmeldungStarten()
         {
-            Console.WriteLine("Anmeldung Platzhalter");
-            Console.ReadKey();
+            benutzerVerwalter.BenutzerLogin();
         }
 
         private void AnwendungBeenden()
