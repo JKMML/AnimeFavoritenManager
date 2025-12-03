@@ -22,6 +22,7 @@ namespace AnimeFavoritenManager.Daten
             BenutzerLaden();
         }
 
+        // lädt Liste aus Json Datei, bei fehler leere liste wird verwendet
         private void BenutzerLaden()
         {
             if (!File.Exists(BenutzerDateiPfad))
@@ -49,6 +50,7 @@ namespace AnimeFavoritenManager.Daten
             }
 
         }
+        // speichert Liste in Json Datei
         private void BenutzerSpeichern()
         {
             var optionen = new JsonSerializerOptions { WriteIndented = true };
