@@ -1,9 +1,5 @@
 ﻿using AnimeFavoritenManager.Daten;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AnimeFavoritenManager.Menu
 {
@@ -16,51 +12,73 @@ namespace AnimeFavoritenManager.Menu
 
         public Hauptmenu()
         {
-            animeDatenVerwalter.DummyDatenLaden();
+            // animeDatenVerwalter.DummyDatenLaden();
+
             favoritenMenu = new FavoritenMenu(benutzerVerwalter, animeDatenVerwalter);
         }
 
-        public void AnwendungStarten()                   
+        public void AnwendungStarten()
         {
-            
+            AnimeDatenBeimStartLaden();
 
-            while (anwendungLaeuft) 
+            while (anwendungLaeuft)
             {
                 HauptmenuAnzeigen();
                 string? benutzerAuswahl = Console.ReadLine();
                 HauptmenuAuswahlBehandeln(benutzerAuswahl);
-            }  
+            }
         }
+
         private void HauptmenuAnzeigen()
         {
             Console.Clear();
             Console.WriteLine("=== Anime Favoriten Manager ===");
             Console.WriteLine("1. Benutzer Registrieren");
-            Console.WriteLine("2. Benutzer Login");
-            if (benutzerVerwalter.AngemeldeterBenutzer!= null)
+
+            if (!benutzerVerwalter.IstBenutzerAngemeldet)
             {
-                Console.WriteLine("3) Favoriten-Menü");
-                Console.WriteLine($"(Angemeldet als: {benutzerVerwalter.AngemeldeterBenutzer.BenutzerName})");
+                Console.WriteLine("2. Benutzer Login");
+            }
+            else
+            {
+                Console.WriteLine("2. Benutzer Logout");
+                Console.WriteLine("3. Favoriten-Menü");
             }
 
-            Console.WriteLine("0. Beenden");
+            Console.WriteLine("0. Beenden\n");
+
+            if (benutzerVerwalter.AngemeldeterBenutzer != null)
+            {
+                Console.WriteLine($"(Angemeldet als: {benutzerVerwalter.AngemeldeterBenutzer.BenutzerName})");
+            }
             Console.Write("Bitte wählen Sie eine Option: ");
         }
+
         private void HauptmenuAuswahlBehandeln(string? benutzerAuswahl)
         {
             switch (benutzerAuswahl)
             {
                 case "1":
-                    BenutzerRegistrierungStarten();
+                    benutzerVerwalter.BenutzerRegistrieren();
                     break;
 
                 case "2":
-                    BenutzerAnmeldungStarten();
+                    if (!benutzerVerwalter.IstBenutzerAngemeldet)
+                    {
+                       
+                        benutzerVerwalter.BenutzerLogin();
+                    }
+                    else
+                    {
+                       
+                        benutzerVerwalter.BenutzerLogout();
+                    }
                     break;
+
                 case "3":
                     if (benutzerVerwalter.AngemeldeterBenutzer != null)
                     {
-                        favoritenMenu.Starten();
+                        favoritenMenu.FavoritenStarten();
                     }
                     else
                     {
@@ -70,7 +88,6 @@ namespace AnimeFavoritenManager.Menu
                     }
                     break;
 
-
                 case "0":
                     AnwendungBeenden();
                     break;
@@ -79,16 +96,6 @@ namespace AnimeFavoritenManager.Menu
                     UngueltigeAuswahlBehandeln();
                     break;
             }
-        }
-
-        private void BenutzerRegistrierungStarten()
-        {
-            benutzerVerwalter.BenutzerRegistrieren();
-        }
-
-        private void BenutzerAnmeldungStarten()
-        {
-            benutzerVerwalter.BenutzerLogin();
         }
 
         private void AnwendungBeenden()
@@ -101,6 +108,27 @@ namespace AnimeFavoritenManager.Menu
         {
             Console.WriteLine("Ungültige Auswahl. Bitte erneut versuchen.");
             Console.WriteLine("Weiter mit einer beliebigen Taste");
+            Console.ReadKey();
+        }
+
+        private void AnimeDatenBeimStartLaden()
+        {
+            Console.Clear();
+            Console.WriteLine("Anime-Daten werden von der API geladen...");
+
+            try
+            {
+                animeDatenVerwalter.AnimeVonApiLadenAsync().GetAwaiter().GetResult();
+                Console.WriteLine("Anime-Daten wurden erfolgreich geladen.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Fehler beim Laden der Anime-Daten:");
+                Console.WriteLine(ex.Message);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Weiter mit einer beliebigen Taste...");
             Console.ReadKey();
         }
     }

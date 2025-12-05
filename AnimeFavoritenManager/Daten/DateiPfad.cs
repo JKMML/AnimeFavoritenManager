@@ -9,6 +9,5 @@ namespace AnimeFavoritenManager.Daten
     internal class DateiPfad
     {
         public const string BenutzerDateiPfad = "benutzer.json";
-        public const string BenutzerFavoritenDateiPfad = "benutzerFavoriten.json";
     }
 }
