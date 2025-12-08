@@ -1,4 +1,5 @@
 ﻿using AnimeFavoritenManager.Daten;
+using AnimeFavoritenManager.HelferKlassen;
 using AnimeFavoritenManager.Modelle;
 using System;
 using System.Collections.Generic;
@@ -26,34 +27,38 @@ namespace AnimeFavoritenManager.Menu
             while (!zurueck)
             {
                 Console.Clear();
-                Console.WriteLine("=== Favoriten-Menü ===");
+                FarbAusgabe.SchreibeTitel("=== Favoriten-Menü ===");
                 Console.WriteLine("1. Anime-Liste anzeigen");
                 Console.WriteLine("2. Anime zu Favoriten hinzufügen");
-                Console.WriteLine("3. Favoriten anzeigen");
+                Console.WriteLine("3. Anime aus Favoriten entfernen");
+                Console.WriteLine("4. Favoriten anzeigen");
                 Console.WriteLine("0. Zurück");
                 Console.Write("Bitte wählen: ");
-                string? auswahl = Console.ReadLine();
+                int auswahl = EingabeHelfer.LeseAuswahlZwischen(0, 4, true);
 
                 switch (auswahl)
                 {
-                    case "1":
+                    case 1:
                         AnimeListeAnzeigen();
                         break;
 
-                    case "2":
+                    case 2:
                         AnimeFavoritenHinzufuegen();
                         break;
 
-                    case "3":
-                        FavoritenAnzeigen();
+                    case 3:
+                        FavoritenEntfernen();
                         break;
 
-                    case "0":
+                    case 4:
+                        FavoritenAnzeigen();
+                        break;
+                    case 0:
                         zurueck = true;
                         break;
 
                     default:
-                        Console.WriteLine("Ungültige Auswahl.");
+                        FarbAusgabe.SchreibeFehler("Ungültige Auswahl.");
                         Console.WriteLine("Weiter mit einer beliebigen Taste");
                         Console.ReadKey();
                         break;
@@ -64,74 +69,79 @@ namespace AnimeFavoritenManager.Menu
         private void AnimeListeAnzeigen()
         {
             Console.Clear();
-            Console.WriteLine("=== Verfügbare Anime ===");
+            FarbAusgabe.SchreibeTitel("=== Verfügbare Anime ===");
 
-            var alleAnime = animeDatenVerwalter.GetAnimeListe();
+            List<Anime>? alleAnime = animeDatenVerwalter.GetAnimeListe();
 
             if (alleAnime == null || alleAnime.Count == 0)
             {
-                Console.WriteLine("Es sind keine Anime geladen. Bitte zuerst Anime aus der API laden.");
+                FarbAusgabe.SchreibeFehler("Es sind keine Anime geladen. Bitte zuerst Anime aus der API laden.");
+                Console.WriteLine("Weiter mit einer beliebigen Taste");
+                Console.ReadKey();
+                return;
             }
-            else
-            {
+            
                 for (int i = 0; i < alleAnime.Count; i++)
                 {
                     var anime = alleAnime[i];
-                    int listenNummer = i + 1;
 
                     Console.WriteLine("-----------------------------");
-                    Console.WriteLine($"[{listenNummer}] Titel: {anime.AnimeTitel}");
-                    Console.WriteLine($"Episoden: {anime.EpisodenAnzahl}");
-                    Console.WriteLine($"Bewertung: {anime.DurchschnittsBewertung}");
+
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.Write($"[{i + 1}] ");
+                    Console.ResetColor();
+
+                    Console.WriteLine(anime.AnimeTitel);
+                    Console.WriteLine(" - Score: " + anime.DurchschnittsBewertung +
+                                      " - Episoden: " + anime.EpisodenAnzahl);
                 }
-            }
+            
 
             Console.WriteLine("Weiter mit einer beliebigen Taste");
             Console.ReadKey();
+
         }
 
         private void AnimeFavoritenHinzufuegen()
         {
             Console.Clear();
-            Console.WriteLine("=== Anime zu Favoriten hinzufügen ===");
+            FarbAusgabe.SchreibeTitel("=== Anime zu Favoriten hinzufügen ===");
 
             var alleAnime = animeDatenVerwalter.GetAnimeListe();
 
             if (alleAnime == null || alleAnime.Count == 0)
             {
-                Console.WriteLine("Es sind keine Anime geladen. Bitte zuerst Anime aus der API laden.");
+                FarbAusgabe.SchreibeHinweis("Es sind keine Anime geladen. Bitte zuerst Anime aus der API laden.");
                 Console.WriteLine("Weiter mit einer beliebigen Taste");
                 Console.ReadKey();
+                Console.Clear();
                 return;
             }
 
-            // Optional: Liste kurz anzeigen
+            //  Liste kurz anzeigen
             for (int i = 0; i < alleAnime.Count; i++)
             {
                 var anime = alleAnime[i];
                 int listenIndex = i + 1;
-                Console.WriteLine($"[{listenIndex}] {anime.AnimeTitel}");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.Write($"[{listenIndex}]");
+                Console.ResetColor();
+                Console.WriteLine($" {anime.AnimeTitel}");
             }
 
-            Console.Write("Bitte Listen-Nummer des Animes eingeben: ");
+            FarbAusgabe.SchreibeHinweis("Bitte Listen-Nummer des Animes eingeben (0 = Abbrechen): ");
 
-            // 👉 HIER wird listenNummer EINMAL deklariert
-            if (!int.TryParse(Console.ReadLine(), out int listenNummer))
-            {
-                Console.WriteLine("Ungültige Eingabe. Bitte eine Zahl eingeben.");
-                Console.ReadKey();
-                return;
-            }
+            int listenNummer = EingabeHelfer.LeseAuswahlZwischen(0, alleAnime.Count, true);
 
-            if (listenNummer < 1 || listenNummer > alleAnime.Count)
+            if (listenNummer == 0)
             {
-                Console.WriteLine("Es gibt keinen Anime mit dieser Nummer in der Liste.");
+                FarbAusgabe.SchreibeHinweis("Vorgang abgebrochen.");
                 Console.ReadKey();
                 return;
             }
 
             int index = listenNummer - 1;
-            var ausgewaehlterAnime = alleAnime[index];
+            Anime ausgewaehlterAnime = alleAnime[index];
 
             benutzerVerwalter.AnimeFavoritenHinzufügen(ausgewaehlterAnime.AnimeNummer, alleAnime);
 
@@ -148,5 +158,20 @@ namespace AnimeFavoritenManager.Menu
             Console.WriteLine("Weiter mit einer beliebigen Taste");
             Console.ReadKey();
         }
+
+        private void FavoritenEntfernen()
+        {
+            {
+                Console.Clear();
+
+                var alleAnime = animeDatenVerwalter.GetAnimeListe();
+                benutzerVerwalter.FavoritenEntfernen(alleAnime);
+
+                Console.WriteLine();
+                Console.WriteLine("Weiter mit einer beliebigen Taste");
+                Console.ReadKey();
+            }
+        }
+
     }
 }

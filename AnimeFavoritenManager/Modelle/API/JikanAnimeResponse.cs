@@ -27,5 +27,6 @@ namespace AnimeFavoritenManager.Modelle.API
 
         [JsonPropertyName("score")]
         public double? Score { get; set; }
+
     }
 }

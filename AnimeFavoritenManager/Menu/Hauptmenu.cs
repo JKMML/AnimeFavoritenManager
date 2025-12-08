@@ -1,10 +1,12 @@
 ﻿using AnimeFavoritenManager.Daten;
+using AnimeFavoritenManager.HelferKlassen;
 using System;
 
 namespace AnimeFavoritenManager.Menu
 {
     internal class Hauptmenu
     {
+        
         private readonly BenutzerVerwalter benutzerVerwalter = new BenutzerVerwalter();
         private readonly AnimeDatenVerwalter animeDatenVerwalter = new AnimeDatenVerwalter();
         private readonly FavoritenMenu favoritenMenu;
@@ -24,71 +26,80 @@ namespace AnimeFavoritenManager.Menu
             while (anwendungLaeuft)
             {
                 HauptmenuAnzeigen();
-                string? benutzerAuswahl = Console.ReadLine();
-                HauptmenuAuswahlBehandeln(benutzerAuswahl);
+
+
+                Console.Write("Bitte wählen: ");
+                int auswahl = EingabeHelfer.LeseAuswahlZwischen(0, 2, true);
+
+                HauptmenuAuswahlBehandeln(auswahl);
             }
         }
 
         private void HauptmenuAnzeigen()
         {
-            Console.Clear();
-            Console.WriteLine("=== Anime Favoriten Manager ===");
-            Console.WriteLine("1. Benutzer Registrieren");
-
-            if (!benutzerVerwalter.IstBenutzerAngemeldet)
             {
-                Console.WriteLine("2. Benutzer Login");
-            }
-            else
-            {
-                Console.WriteLine("2. Benutzer Logout");
-                Console.WriteLine("3. Favoriten-Menü");
-            }
+                Console.Clear();
+                FarbAusgabe.SchreibeTitel("=== Anime Favoriten Manager ===");
+                Console.WriteLine();
 
-            Console.WriteLine("0. Beenden\n");
+                if (!benutzerVerwalter.IstBenutzerAngemeldet)
+                {
+                    Console.WriteLine("1. Registrieren");
+                    Console.WriteLine("2. Login");
+                    Console.WriteLine("0. Beenden");
+                }
+                else
+                {
+                    Console.WriteLine("1. Favoriten-Menü");
+                    Console.WriteLine("2. Logout");
+                    Console.WriteLine("0. Beenden");
 
-            if (benutzerVerwalter.AngemeldeterBenutzer != null)
-            {
-                Console.WriteLine($"(Angemeldet als: {benutzerVerwalter.AngemeldeterBenutzer.BenutzerName})");
+                    Console.WriteLine();
+                    FarbAusgabe.SchreibeErfolg("Angemeldet als: " + benutzerVerwalter.AngemeldeterBenutzer.BenutzerName);
+                }
+
+                Console.WriteLine();
+                Console.Write("Bitte wählen: ");
             }
-            Console.Write("Bitte wählen Sie eine Option: ");
         }
 
-        private void HauptmenuAuswahlBehandeln(string? benutzerAuswahl)
+        private void HauptmenuAuswahlBehandeln(int benutzerAuswahl)
         {
             switch (benutzerAuswahl)
             {
-                case "1":
-                    benutzerVerwalter.BenutzerRegistrieren();
-                    break;
-
-                case "2":
+                case 1:
                     if (!benutzerVerwalter.IstBenutzerAngemeldet)
                     {
-                       
-                        benutzerVerwalter.BenutzerLogin();
+                        // 1 = Registrieren (nicht eingeloggt)
+                        benutzerVerwalter.BenutzerRegistrieren();
                     }
                     else
                     {
-                       
+                        // 1 = Favoriten-Menü (eingeloggt)
+                        favoritenMenu.FavoritenStarten();
+                    }
+                    break;
+
+                case 2:
+                    if (!benutzerVerwalter.IstBenutzerAngemeldet)
+                    {
+                        // 2 = Anmelden
+                        benutzerVerwalter.BenutzerLogin();
+
+                        // Wenn Login erfolgreich → direkt ins Favoriten-Menü
+                        if (benutzerVerwalter.IstBenutzerAngemeldet)
+                        {
+                            favoritenMenu.FavoritenStarten();
+                        }
+                    }
+                    else
+                    {
+                        // 2 = Abmelden
                         benutzerVerwalter.BenutzerLogout();
                     }
                     break;
 
-                case "3":
-                    if (benutzerVerwalter.AngemeldeterBenutzer != null)
-                    {
-                        favoritenMenu.FavoritenStarten();
-                    }
-                    else
-                    {
-                        Console.WriteLine("Bitte melden Sie sich an.");
-                        Console.WriteLine("Weiter mit einer beliebigen Taste");
-                        Console.ReadKey();
-                    }
-                    break;
-
-                case "0":
+                case 0:
                     AnwendungBeenden();
                     break;
 
@@ -97,6 +108,7 @@ namespace AnimeFavoritenManager.Menu
                     break;
             }
         }
+        
 
         private void AnwendungBeenden()
         {
@@ -114,16 +126,16 @@ namespace AnimeFavoritenManager.Menu
         private void AnimeDatenBeimStartLaden()
         {
             Console.Clear();
-            Console.WriteLine("Anime-Daten werden von der API geladen...");
+            FarbAusgabe.SchreibeHinweis("Anime-Daten werden von der API geladen...");
 
             try
             {
                 animeDatenVerwalter.AnimeVonApiLadenAsync().GetAwaiter().GetResult();
-                Console.WriteLine("Anime-Daten wurden erfolgreich geladen.");
+                FarbAusgabe.SchreibeErfolg("Anime-Daten wurden erfolgreich geladen.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Fehler beim Laden der Anime-Daten:");
+                FarbAusgabe.SchreibeFehler("Fehler beim Laden der Anime-Daten:");
                 Console.WriteLine(ex.Message);
             }
 

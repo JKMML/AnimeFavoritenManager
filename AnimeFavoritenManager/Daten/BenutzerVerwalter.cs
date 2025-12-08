@@ -1,4 +1,5 @@
-﻿using AnimeFavoritenManager.Modelle;
+﻿using AnimeFavoritenManager.HelferKlassen;
+using AnimeFavoritenManager.Modelle;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -55,19 +56,20 @@ namespace AnimeFavoritenManager.Daten
             var optionen = new JsonSerializerOptions { WriteIndented = true };
             string jsonDaten = JsonSerializer.Serialize(benutzerListe, optionen);
             File.WriteAllText(BenutzerDateiPfad, jsonDaten);
+
         }
 
         public void BenutzerRegistrieren()
         {
             Console.Clear();
-            Console.WriteLine("=== Benutzer registrieren ===");
+            FarbAusgabe.SchreibeTitel("=== Benutzer registrieren ===");
             Console.WriteLine();
             Console.Write("Bitte Benutzernamen eingeben: ");
             string? benutzername = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(benutzername))
             {
-                Console.WriteLine("Benutzername darf nicht leer sein!");
+                FarbAusgabe.SchreibeFehler("Benutzername darf nicht leer sein!");
                 Console.WriteLine("Drücke eine Taste um fortzufahren");
                 Console.ReadKey();
                 return;
@@ -76,7 +78,7 @@ namespace AnimeFavoritenManager.Daten
             // Prüfung ob Name schon existiert
             if (benutzerListe.Any(b => b.BenutzerName.Equals(benutzername, StringComparison.OrdinalIgnoreCase)))
             {
-                Console.WriteLine("Benutzer existiert bereits!");
+                FarbAusgabe.SchreibeHinweis("Benutzer existiert bereits!");
                 Console.WriteLine("Drücke eine Taste um fortzufahren");
                 Console.ReadKey();
                 return;
@@ -87,7 +89,7 @@ namespace AnimeFavoritenManager.Daten
 
             if (string.IsNullOrWhiteSpace(passwort))
             {
-                Console.WriteLine("Passwort darf nicht leer sein.");
+                FarbAusgabe.SchreibeFehler("Passwort darf nicht leer sein.");
                 Console.WriteLine("Drücke eine Taste, um fortzufahren...");
                 Console.ReadKey();
                 return;
@@ -107,7 +109,7 @@ namespace AnimeFavoritenManager.Daten
             benutzerListe.Add(neuerBenutzer);
             BenutzerSpeichern();
 
-            Console.WriteLine("Benutzer wurde registriert");
+            FarbAusgabe.SchreibeErfolg("Benutzer wurde registriert");
             Console.WriteLine($"Deine Benutzer ID: {neuerBenutzer.BenutzerID}");
             Console.ReadKey();
         }
@@ -115,7 +117,7 @@ namespace AnimeFavoritenManager.Daten
         public void BenutzerLogin()
         {
             Console.Clear();
-            Console.WriteLine("=== Benutzer Login ===");
+            FarbAusgabe.SchreibeTitel("=== Benutzer Login ===");
             Console.Write("Benutzername: ");
             string? benutzername = Console.ReadLine();
 
@@ -124,7 +126,7 @@ namespace AnimeFavoritenManager.Daten
 
             if (string.IsNullOrWhiteSpace(benutzername) || string.IsNullOrWhiteSpace(passwort))
             {
-                Console.WriteLine("Benutzername und Passwort dürfen nicht leer sein.");
+                FarbAusgabe.SchreibeFehler("Benutzername und Passwort dürfen nicht leer sein.");
                 Console.WriteLine("Drücke eine Taste, um fortzufahren...");
                 Console.ReadKey();
                 return;
@@ -136,7 +138,7 @@ namespace AnimeFavoritenManager.Daten
 
             if (benutzer == null)
             {
-                Console.WriteLine("Login fehlgeschlagen. Benutzername oder Passwort falsch.");
+                FarbAusgabe.SchreibeFehler("Login fehlgeschlagen. Benutzername oder Passwort falsch.");
                 Console.WriteLine("Drücke eine Taste, um fortzufahren...");
                 Console.ReadKey();
                 return;
@@ -145,7 +147,7 @@ namespace AnimeFavoritenManager.Daten
             AngemeldeterBenutzer = benutzer;
 
             Console.WriteLine($"Willkommen, {benutzer.BenutzerName}");
-            Console.WriteLine("Du bist angemeldet!");
+            FarbAusgabe.SchreibeErfolg("\nDu bist angemeldet!");
             Console.WriteLine("Beliebige Taste, um fortzufahren");
             Console.ReadKey();
         }
@@ -174,7 +176,7 @@ namespace AnimeFavoritenManager.Daten
         {
             if (AngemeldeterBenutzer == null)
             {
-                Console.WriteLine("Bitte Anmelden!");
+                FarbAusgabe.SchreibeHinweis("Bitte Anmelden!");
                 Console.ReadKey();
                 return;
             }
@@ -183,63 +185,145 @@ namespace AnimeFavoritenManager.Daten
 
             if (!nummerExistiert)
             {
-                Console.WriteLine("Es gibt keinen Anime mit dieser Nummer. Bitte eine gültige Nummer eingeben");
+                FarbAusgabe.SchreibeHinweis("Es gibt keinen Anime mit dieser Nummer. Bitte eine gültige Nummer eingeben");
                 return;
             }
 
             if (AngemeldeterBenutzer.FavoritenAnimeNummern.Contains(animeNummer))
             {
-                Console.WriteLine("Dieser Anime befindet sich bereits in deiner Favoritenliste.");
+                FarbAusgabe.SchreibeHinweis("Dieser Anime befindet sich bereits in deiner Favoritenliste.");
                 return;
             }
 
             AngemeldeterBenutzer.FavoritenAnimeNummern.Add(animeNummer);
             BenutzerSpeichern();
-            Console.WriteLine("Anime wurde zur Favoritenliste hinzugefügt");
+            FarbAusgabe.SchreibeErfolg("Anime wurde zur Favoritenliste hinzugefügt");
         }
 
         public void FavoritenAnzeigen(List<Anime> alleAnime)
         {
-            if (AngemeldeterBenutzer == null)
             {
-                Console.WriteLine("Bitte zuerst anmelden.");
+                List<int> favoritenIds;
+
+                if (!VersucheFavoritenUndAnimeZuLaden(alleAnime, out favoritenIds))
+                {
+                    return;
+                }
+
+                FarbAusgabe.SchreibeTitel("=== Deine Favoriten ===");
+
+                int listenNummer = 1;
+
+                foreach (int favId in favoritenIds)
+                {
+                    Anime? anime = alleAnime.FirstOrDefault(a => a.AnimeNummer == favId);
+                    if (anime == null)
+                    {
+                        continue;
+                    }
+
+                    Console.WriteLine("[" + listenNummer + "] " + anime.AnimeTitel +
+                                      " - Score: " + anime.DurchschnittsBewertung +
+                                      " - Episoden: " + anime.EpisodenAnzahl);
+                    listenNummer++;
+                }
+
+                if (listenNummer == 1)
+                {
+                    FarbAusgabe.SchreibeFehler("Keine passenden Anime zu deinen Favoriten gefunden (evtl. API-Liste anders).");
+                }
+            }
+        }
+
+        public void FavoritenEntfernen(List<Anime> alleAnime)
+        {
+            List<int> favoritenIDs;
+
+            if (!VersucheFavoritenUndAnimeZuLaden(alleAnime, out favoritenIDs))
+            {
                 return;
             }
 
-            var favoritenIds = AngemeldeterBenutzer.FavoritenAnimeNummern;
+            FarbAusgabe.SchreibeTitel("=== Favoriten entfernen ===");
 
-            if (favoritenIds == null || favoritenIds.Count == 0)
-            {
-                Console.WriteLine("Du hast noch keine Favoriten.");
-                return;
-            }
-
-            if (alleAnime == null || alleAnime.Count == 0)
-            {
-                Console.WriteLine("Es sind aktuell keine Anime-Daten geladen. Bitte zuerst Anime aus der API laden.");
-                return;
-            }
-
-            Console.WriteLine("=== Deine Favoriten ===");
-
+            List<int> anzeigeliste = new List<int>();
             int listenNummer = 1;
 
-            foreach (var favId in favoritenIds)
+            foreach (int favId in favoritenIDs)
             {
-                var anime = alleAnime.FirstOrDefault(a => a.AnimeNummer == favId);
+                Anime? anime = alleAnime.FirstOrDefault(a => a.AnimeNummer == favId);
                 if (anime == null)
                 {
                     continue;
                 }
 
-                Console.WriteLine($"[{listenNummer}] {anime.AnimeTitel} - Score: {anime.DurchschnittsBewertung} - Episoden: {anime.EpisodenAnzahl}");
+                Console.WriteLine("[" + listenNummer + "] " + anime.AnimeTitel +
+                                  " – Bewertung: " + anime.DurchschnittsBewertung +
+                                  " – Episoden: " + anime.EpisodenAnzahl);
+
+                anzeigeliste.Add(favId);
                 listenNummer++;
             }
 
-            if (listenNummer == 1)
+            if (anzeigeliste.Count == 0)
             {
-                Console.WriteLine("Keine passenden Anime zu deinen Favoriten gefunden (evtl. API-Liste anders).");
+                FarbAusgabe.SchreibeHinweis("Zu deinen Favoriten wurden keine passenden Anime in der aktuellen Liste gefunden.");
+                return;
+            }
+
+            Console.WriteLine();
+            Console.Write("Bitte die Nummer des Favoriten eingeben,\ndie entfernt werden soll (oder 0 zum Abbrechen)\nEingabe: ");
+
+            int auswahl = EingabeHelfer.LeseAuswahlZwischen(0, anzeigeliste.Count, true);
+
+            if (auswahl == 0)
+            {
+                Console.WriteLine("Vorgang abgebrochen.");
+                return;
+            }
+
+
+            int animeNummerZumLoeschen = anzeigeliste[auswahl - 1];
+
+            bool entfernt = AngemeldeterBenutzer.FavoritenAnimeNummern.Remove(animeNummerZumLoeschen);
+
+            if (entfernt)
+            {
+                BenutzerSpeichern();
+                FarbAusgabe.SchreibeErfolg("Der ausgewählte Anime wurde aus deinen Favoriten entfernt.");
+            }
+            else
+            {
+                FarbAusgabe.SchreibeFehler("Der ausgewählte Anime konnte nicht aus der Favoritenliste entfernt werden.");
             }
         }
+
+        private bool VersucheFavoritenUndAnimeZuLaden(List<Anime> alleAnime,out List<int> favoritenIds)
+        {
+            favoritenIds = new List<int>();
+
+            if (AngemeldeterBenutzer == null)
+            {
+                FarbAusgabe.SchreibeHinweis("Bitte zuerst anmelden, um Favoriten zu verwalten.");
+                return false;
+            }
+
+            if (AngemeldeterBenutzer.FavoritenAnimeNummern == null ||
+                AngemeldeterBenutzer.FavoritenAnimeNummern.Count == 0)
+            {
+                FarbAusgabe.SchreibeHinweis("Du hast aktuell keine Favoriten.");
+                return false;
+            }
+
+            if (alleAnime == null || alleAnime.Count == 0)
+            {
+                FarbAusgabe.SchreibeFehler("Es sind keine Anime-Daten geladen. Bitte zuerst Daten laden.");
+                return false;
+            }
+
+            favoritenIds = AngemeldeterBenutzer.FavoritenAnimeNummern;
+            return true;
+        }
+
     }
 }
